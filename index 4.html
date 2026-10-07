@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>تسجيل بيانات الطالبة</title>
+  <style>
+    *{box-sizing:border-box} body{margin:0;font-family:Tahoma,Arial,sans-serif;background:#f5f6fa;color:#222;min-height:100vh;display:grid;place-items:center;padding:20px}
+    .card{width:min(520px,100%);background:#fff;border-radius:22px;padding:28px;box-shadow:0 12px 35px rgba(0,0,0,.09)}
+    h1{margin:0 0 8px;font-size:27px;text-align:center} p{margin:0 0 24px;text-align:center;color:#666}
+    label{display:block;margin:15px 0 7px;font-weight:700} input,select{width:100%;padding:13px 14px;border:1px solid #d8dbe3;border-radius:12px;font-size:16px;background:#fff;outline:none}
+    input:focus,select:focus{border-color:#666} button{width:100%;margin-top:22px;border:0;border-radius:12px;padding:14px;font-size:17px;font-weight:700;cursor:pointer;background:#222;color:#fff}
+    button:disabled{opacity:.55;cursor:not-allowed}.msg{display:none;margin-top:16px;padding:12px;border-radius:10px;text-align:center;font-weight:700}.ok{display:block;background:#e9f8ee;color:#176b35}.err{display:block;background:#fdecec;color:#9b1c1c}
+    .note{font-size:12px;color:#888;margin-top:14px;text-align:center}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>تسجيل بيانات الطالبة</h1>
+    <p>يرجى تعبئة البيانات ثم الضغط على حفظ البيانات</p>
+
+    <form id="studentForm">
+      <label for="name">اسم الطالبة</label>
+      <input id="name" name="name" type="text" autocomplete="name" required />
+
+      <label for="grade">الصف</label>
+      <select id="grade" name="grade" required>
+        <option value="" selected disabled>اختاري الصف</option>
+        <option>أول ثانوي</option>
+        <option>ثاني ثانوي</option>
+        <option>ثالث ثانوي</option>
+      </select>
+
+      <label for="phone">رقم التواصل</label>
+      <input id="phone" name="phone" type="tel" inputmode="numeric" dir="ltr" maxlength="10" placeholder="05XXXXXXXX" pattern="05[0-9]{8}" required />
+
+      <button id="saveBtn" type="submit">حفظ البيانات</button>
+      <div id="message" class="msg" role="status" aria-live="polite"></div>
+      <div class="note">للتجربة فقط: استخدمي بيانات وهمية حاليًا.</div>
+    </form>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC824b34fho-WKDUZPn-p3IM5fEMZydcNg",
+      authDomain: "try1-52b95.firebaseapp.com",
+      projectId: "try1-52b95",
+      storageBucket: "try1-52b95.firebasestorage.app",
+      messagingSenderId: "499915286463",
+      appId: "1:499915286463:web:5e9b8e4e4de533aad4630a"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const form = document.getElementById("studentForm");
+    const btn = document.getElementById("saveBtn");
+    const msg = document.getElementById("message");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msg.className = "msg";
+      msg.textContent = "";
+
+      const name = document.getElementById("name").value.trim();
+      const grade = document.getElementById("grade").value;
+      const phone = document.getElementById("phone").value.trim();
+
+      if (!/^05\d{8}$/.test(phone)) {
+        msg.textContent = "تأكدي من رقم التواصل: يجب أن يكون 10 أرقام ويبدأ بـ 05.";
+        msg.className = "msg err";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "جارٍ الحفظ...";
+
+      try {
+        await addDoc(collection(db, "Students"), {
+          Name: name,
+          Grade: grade,
+          Phone: phone,
+          CreatedAt: serverTimestamp()
+        });
+        form.reset();
+        msg.textContent = "تم حفظ البيانات بنجاح ✓";
+        msg.className = "msg ok";
+      } catch (error) {
+        console.error(error);
+        msg.textContent = "تعذر حفظ البيانات. تأكدي من اتصال الإنترنت وإعدادات Firestore.";
+        msg.className = "msg err";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "حفظ البيانات";
+      }
+    });
+  </script>
+</body>
+</html>
